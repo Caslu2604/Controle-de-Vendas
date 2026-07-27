@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Painel da Loja</title>
-  <meta http-equiv="refresh" content="0; url=https://script.google.com/macros/s/AKfycbzFF-Sll4ttveguSIQfCDc1WDjy-4FwINTcuD3IKDpBfFFTWAWm0DL4SMo-glQm4IO_4Q/exec">
+  <meta http-equiv="refresh" content="0; url=https://accounts.google.com/AccountChooser?continue=https%3A%2F%2Fscript.google.com%2Fmacros%2Fs%2FAKfycbzFF-Sll4ttveguSIQfCDc1WDjy-4FwINTcuD3IKDpBfFFTWAWm0DL4SMo-glQm4IO_4Q%2Fexec">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@500;600&display=swap" rel="stylesheet">
   <style>
@@ -45,14 +45,16 @@
     <div class="titulo">🛍️ Painel <span>da Loja</span></div>
     <div class="spinner"></div>
     <p>Abrindo o painel...</p>
-    <a class="botao" id="linkManual" href="https://script.google.com/macros/s/AKfycbzFF-Sll4ttveguSIQfCDc1WDjy-4FwINTcuD3IKDpBfFFTWAWm0DL4SMo-glQm4IO_4Q/exec">
+    <a class="botao" id="linkManual" href="https://accounts.google.com/AccountChooser?continue=https%3A%2F%2Fscript.google.com%2Fmacros%2Fs%2FAKfycbzFF-Sll4ttveguSIQfCDc1WDjy-4FwINTcuD3IKDpBfFFTWAWm0DL4SMo-glQm4IO_4Q%2Fexec">
       Se não abrir sozinho, toque aqui
     </a>
   </div>
 
   <script>
-    // Redirecionamento direto (sem iframe), pra não travar a tela de permissão do Google.
-    window.location.replace("https://script.google.com/macros/s/AKfycbzFF-Sll4ttveguSIQfCDc1WDjy-4FwINTcuD3IKDpBfFFTWAWm0DL4SMo-glQm4IO_4Q/exec");
+    // Redirecionamento passando pelo seletor de contas do Google — assim, mesmo
+    // com mais de uma conta logada no navegador, ele sempre pergunta qual usar
+    // em vez de escolher a errada silenciosamente.
+    window.location.replace("https://accounts.google.com/AccountChooser?continue=https%3A%2F%2Fscript.google.com%2Fmacros%2Fs%2FAKfycbzFF-Sll4ttveguSIQfCDc1WDjy-4FwINTcuD3IKDpBfFFTWAWm0DL4SMo-glQm4IO_4Q%2Fexec");
   </script>
 </body>
 </html>
