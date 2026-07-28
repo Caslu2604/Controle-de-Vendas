@@ -242,6 +242,51 @@
     // Cole aqui o link da sua implantação do Apps Script (terminando em /exec)
     const API_BASE = 'https://script.google.com/macros/s/AKfycby_-hajy2AUJj5JigArJc0tCKDwOF7o-bwvaOSNE4vqPUqoVvDDKnIIFt9-dFIko20NNw/exec';
 
+    // Chama a API do Apps Script via JSONP (tag <script>), porque o Apps
+    // Script não envia cabeçalho de CORS e o fetch() normal seria bloqueado
+    // pelo navegador. params pode ter campos simples (vira query string) ou
+    // um campo "dados" com um objeto (vira JSON dentro da URL).
+    function chamarApi(acao, params) {
+      return new Promise(function (resolve, reject) {
+        const nomeCallback = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+        const timeout = setTimeout(function () {
+          limpar();
+          reject(new Error('O servidor demorou demais pra responder.'));
+        }, 20000);
+
+        function limpar() {
+          clearTimeout(timeout);
+          delete window[nomeCallback];
+          if (script.parentNode) script.parentNode.removeChild(script);
+        }
+
+        window[nomeCallback] = function (resposta) {
+          limpar();
+          if (!resposta || !resposta.ok) {
+            reject(new Error((resposta && resposta.erro) || 'Erro desconhecido no servidor.'));
+          } else {
+            resolve(resposta.dados);
+          }
+        };
+
+        const query = new URLSearchParams();
+        query.set('action', acao);
+        query.set('callback', nomeCallback);
+        Object.keys(params || {}).forEach(function (chave) {
+          const valor = params[chave];
+          query.set(chave, typeof valor === 'object' ? JSON.stringify(valor) : valor);
+        });
+
+        const script = document.createElement('script');
+        script.src = API_BASE + '?' + query.toString();
+        script.onerror = function () {
+          limpar();
+          reject(new Error('Não consegui conectar ao servidor.'));
+        };
+        document.body.appendChild(script);
+      });
+    }
+
     let CATEGORIAS = [];
     let FORMAS_PAGAMENTO = [];
     let contadorItens = 0;
@@ -272,11 +317,8 @@
     });
 
     // ---------- Dados iniciais ----------
-    fetch(API_BASE + '?action=dadosIniciais')
-      .then(r => r.json())
-      .then(function (resp) {
-      if (!resp.ok) throw new Error(resp.erro || 'Erro ao carregar dados iniciais.');
-      const dados = resp.dados;
+    chamarApi('dadosIniciais')
+      .then(function (dados) {
       CATEGORIAS = dados.categorias;
       FORMAS_PAGAMENTO = dados.formasPagamento;
 
@@ -401,16 +443,7 @@
       if (!venda.cliente) { mostrarAviso('avisoVenda', 'Informe o nome do cliente.', 'erro'); return; }
 
       document.getElementById('loading').classList.add('ativo');
-      fetch(API_BASE + '?action=registrarVenda', {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita pré-checagem de CORS
-        body: JSON.stringify(venda)
-      })
-        .then(r => r.json())
-        .then(function (resp) {
-          if (!resp.ok) throw new Error(resp.erro || 'Erro ao salvar.');
-          return resp.dados;
-        })
+      chamarApi('registrarVenda', { dados: venda })
         .then(function (resultado) {
           document.getElementById('loading').classList.remove('ativo');
           mostrarAviso('avisoVenda', '✓ Venda registrada com sucesso (' + resultado.itensGravados + ' item(ns)).', 'sucesso');
@@ -429,9 +462,7 @@
 
     // ---------- Consultas: Resumo ----------
     function carregarResumo() {
-      fetch(API_BASE + '?action=obterResumoFinanceiro').then(r => r.json()).then(function (resp) {
-        const r = resp.dados;
-        if (!resp.ok || !r) { document.getElementById('kpisResumo').innerHTML = '<div class="vazio">Não consegui carregar o resumo.</div>'; return; }
+      chamarApi('obterResumoFinanceiro').then(function (r) {
         document.getElementById('kpisResumo').innerHTML =
           kpi('Faturamento do mês', r.faturamentoMes, true) +
           kpi('Faturamento total', r.faturamentoTotal) +
@@ -461,10 +492,8 @@
     }
 
     function carregarDevedores() {
-      fetch(API_BASE + '?action=listarDevedores').then(r => r.json()).then(function (resp) {
-        const lista = resp.dados || [];
+      chamarApi('listarDevedores').then(function (lista) {
         const container = document.getElementById('listaDevedoresCard');
-        if (!resp.ok) { container.innerHTML = '<div class="vazio">Não consegui carregar os devedores.</div>'; return; }
         if (!lista.length) { container.innerHTML = '<div class="vazio">Nenhum cliente devendo 🎉</div>'; return; }
         container.innerHTML = lista.map(function (d) {
           return '<div class="devedor-linha" data-cliente="' + escaparHtml(d.cliente) + '">' +
@@ -494,11 +523,8 @@
       const box = document.getElementById('resultadoBusca');
       box.style.display = 'block';
       box.innerHTML = '<div class="vazio">Buscando…</div>';
-      fetch(API_BASE + '?action=listarParcelasCliente&cliente=' + encodeURIComponent(nome))
-        .then(r => r.json())
-        .then(function (resp) {
-        const parcelas = resp.dados || [];
-        if (!resp.ok) throw new Error(resp.erro || 'Erro ao buscar.');
+      chamarApi('listarParcelasCliente', { cliente: nome })
+        .then(function (parcelas) {
         if (!parcelas.length) { box.innerHTML = '<div class="vazio">Nenhuma parcela encontrada para "' + escaparHtml(nome) + '".</div>'; return; }
         const totalPendente = parcelas.filter(p => p.status === 'Pendente').reduce((s, p) => s + p.valor, 0);
         box.innerHTML =
@@ -523,14 +549,8 @@
     function alternarStatus(linha, statusAtual, botao) {
       const novo = statusAtual === 'Pago' ? 'Pendente' : 'Pago';
       botao.disabled = true;
-      fetch(API_BASE + '?action=marcarStatusParcela', {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ linha: linha, status: novo })
-      })
-        .then(r => r.json())
-        .then(function (resp) {
-          if (!resp.ok) throw new Error(resp.erro || 'Erro ao atualizar.');
+      chamarApi('marcarStatusParcela', { linha: linha, status: novo })
+        .then(function () {
           botao.textContent = novo;
           botao.className = 'status-chip ' + (novo === 'Pago' ? 'status-pago' : 'status-pendente');
           botao.dataset.status = novo;
