@@ -1,58 +1,545 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+  <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>Painel da Loja</title>
-  <meta http-equiv="refresh" content="0; url=https://script.google.com/macros/s/AKfycbzFF-Sll4ttveguSIQfCDc1WDjy-4FwINTcuD3IKDpBfFFTWAWm0DL4SMo-glQm4IO_4Q/exec">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Painel de Vendas</title>
   <style>
     :root {
       --bg: #FBF7F2;
-      --wine: #7A2E3D;
-      --muted: #8A7C74;
+      --card: #FFFFFF;
       --border: #EAE0D5;
+      --wine: #7A2E3D;
+      --wine-dark: #5E2230;
+      --gold: #B8935A;
+      --text: #2B1B1F;
+      --muted: #8A7C74;
+      --success: #4C7A5B;
+      --success-bg: #EAF2ED;
+      --alert: #C1553B;
+      --alert-bg: #FBECE8;
+      --radius: 14px;
     }
     * { box-sizing: border-box; }
     html, body {
-      margin: 0; padding: 0; height: 100%;
+      margin: 0; padding: 0;
       background: var(--bg);
+      color: var(--text);
       font-family: 'Inter', sans-serif;
-      display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
     }
-    .caixa {
-      text-align: center; padding: 30px; display: flex; flex-direction: column;
-      align-items: center; gap: 16px; max-width: 320px;
+    h1, h2, h3, .display { font-family: 'Fraunces', serif; }
+
+    #app { max-width: 520px; margin: 0 auto; padding-bottom: 92px; min-height: 100vh; }
+
+    header.top {
+      padding: 22px 20px 16px;
+      display: flex; align-items: baseline; justify-content: space-between;
     }
-    .titulo { font-family: 'Fraunces', serif; font-size: 20px; color: #2B1B1F; }
-    .titulo span { color: var(--wine); }
-    .spinner {
-      width: 26px; height: 26px; border-radius: 50%;
-      border: 3px solid var(--border); border-top-color: var(--wine);
-      animation: girar 0.8s linear infinite;
+    header.top .brand { font-size: 21px; font-weight: 600; letter-spacing: -0.01em; }
+    header.top .brand span { color: var(--wine); }
+    header.top .data-hoje { font-size: 12px; color: var(--muted); }
+
+    .screen { padding: 0 16px 8px; display: none; }
+    .screen.ativo { display: block; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 14px;
     }
-    @keyframes girar { to { transform: rotate(360deg); } }
-    p { color: var(--muted); font-size: 13.5px; line-height: 1.5; margin: 0; }
-    a.botao {
-      background: var(--wine); color: #fff; text-decoration: none;
-      padding: 12px 22px; border-radius: 10px; font-weight: 600; font-size: 14px;
+
+    label { display: block; font-size: 12.5px; font-weight: 600; color: var(--muted); margin: 12px 0 5px; text-transform: uppercase; letter-spacing: .03em; }
+    label:first-child { margin-top: 0; }
+    input, select, textarea {
+      width: 100%; padding: 11px 12px; font-size: 15px; font-family: inherit;
+      border: 1px solid var(--border); border-radius: 10px; background: #fff; color: var(--text);
     }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--wine); }
+    .linha-dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .linha-tripla { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+    .item-card {
+      border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; position: relative; background: #FDFBF9;
+    }
+    .item-card .num { font-size: 12px; color: var(--gold); font-weight: 700; }
+    .item-card .remover {
+      position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--muted);
+      font-size: 18px; cursor: pointer; line-height: 1; padding: 4px;
+    }
+    .valor-item { text-align: right; font-size: 13px; color: var(--muted); margin-top: 6px; }
+    .valor-item b { color: var(--text); }
+
+    button.btn {
+      width: 100%; padding: 13px; border-radius: 10px; border: none; font-size: 15px; font-weight: 600;
+      font-family: inherit; cursor: pointer;
+    }
+    .btn-primario { background: var(--wine); color: #fff; }
+    .btn-primario:active { background: var(--wine-dark); }
+    .btn-secundario { background: #fff; color: var(--wine); border: 1.5px solid var(--wine); }
+    .btn-adicionar-item { background: #F3E9DE; color: var(--wine-dark); margin-top: 4px; }
+
+    .aviso { padding: 12px 14px; border-radius: 10px; font-size: 13.5px; margin-bottom: 12px; }
+    .aviso-erro { background: var(--alert-bg); color: var(--alert); }
+    .aviso-sucesso { background: var(--success-bg); color: var(--success); }
+
+    /* Consultas */
+    .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+    .kpi .rotulo { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+    .kpi .valor { font-family: 'Fraunces', serif; font-size: 22px; margin-top: 4px; }
+    .kpi.destaque { grid-column: 1 / -1; background: var(--wine); color: #fff; }
+    .kpi.destaque .rotulo { color: #EBD9DD; }
+
+    .subtabs { display: flex; gap: 8px; margin: 4px 0 14px; }
+    .subtabs button {
+      flex: 1; padding: 9px; border-radius: 9px; border: 1px solid var(--border); background: #fff;
+      font-family: inherit; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer;
+    }
+    .subtabs button.ativo { background: var(--wine); color: #fff; border-color: var(--wine); }
+
+    .devedor-linha {
+      display: flex; justify-content: space-between; align-items: center; padding: 13px 4px;
+      border-bottom: 1px solid var(--border); cursor: pointer;
+    }
+    .devedor-linha:last-child { border-bottom: none; }
+    .devedor-linha .nome { font-weight: 600; }
+    .devedor-linha .sub { font-size: 12px; color: var(--muted); }
+    .devedor-linha .total { font-weight: 700; color: var(--alert); }
+
+    .parcela-linha {
+      display: flex; justify-content: space-between; align-items: center; padding: 10px 0;
+      border-bottom: 1px solid var(--border); gap: 8px;
+    }
+    .parcela-linha:last-child { border-bottom: none; }
+    .parcela-info { font-size: 13.5px; }
+    .parcela-info .venc { color: var(--muted); font-size: 12px; }
+    .status-chip {
+      padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; white-space: nowrap;
+    }
+    .status-pendente { background: var(--alert-bg); color: var(--alert); }
+    .status-pago { background: var(--success-bg); color: var(--success); }
+
+    .busca-wrap { display: flex; gap: 8px; }
+    .busca-wrap input { flex: 1; }
+    .busca-wrap button { width: auto; padding: 11px 16px; }
+
+    .vazio { text-align: center; color: var(--muted); font-size: 13.5px; padding: 30px 10px; }
+
+    /* Tab bar */
+    nav.tabbar {
+      position: fixed; bottom: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto;
+      background: #fff; border-top: 1px solid var(--border);
+      display: flex; padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+    }
+    nav.tabbar button {
+      flex: 1; background: none; border: none; font-family: inherit; padding: 8px 4px;
+      display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--muted); cursor: pointer;
+    }
+    nav.tabbar button.ativo { color: var(--wine); }
+    nav.tabbar .icone { font-size: 20px; }
+    nav.tabbar .rotulo { font-size: 11px; font-weight: 600; }
+
+    .loading-overlay {
+      position: fixed; inset: 0; background: rgba(251,247,242,.85); display: none;
+      align-items: center; justify-content: center; font-size: 14px; color: var(--wine); font-weight: 600; z-index: 50;
+    }
+    .loading-overlay.ativo { display: flex; }
   </style>
 </head>
 <body>
-  <div class="caixa">
-    <div class="titulo">🛍️ Painel <span>da Loja</span></div>
-    <div class="spinner"></div>
-    <p>Abrindo o painel...</p>
-    <a class="botao" id="linkManual" href="https://script.google.com/macros/s/AKfycbzFF-Sll4ttveguSIQfCDc1WDjy-4FwINTcuD3IKDpBfFFTWAWm0DL4SMo-glQm4IO_4Q/exec">
-      Se não abrir sozinho, toque aqui
-    </a>
+  <div id="app">
+    <header class="top">
+      <div class="brand">🛍️ Painel <span>da Loja</span></div>
+      <div class="data-hoje" id="dataHoje"></div>
+    </header>
+
+    <!-- TELA: NOVA VENDA -->
+    <section class="screen ativo" id="tela-venda">
+      <div id="avisoVenda"></div>
+
+      <div class="card">
+        <label>Data da venda</label>
+        <input type="date" id="campoData">
+
+        <div class="linha-dupla">
+          <div>
+            <label>Cliente</label>
+            <input type="text" id="campoCliente" list="listaClientes" placeholder="Nome do cliente" autocomplete="off">
+            <datalist id="listaClientes"></datalist>
+          </div>
+          <div>
+            <label>Telefone (opcional)</label>
+            <input type="tel" id="campoTelefone" placeholder="(00) 00000-0000">
+          </div>
+        </div>
+
+        <label>Forma de pagamento</label>
+        <select id="campoFormaPgto"></select>
+
+        <div id="blocoParcelas" style="display:none">
+          <label>Número de parcelas</label>
+          <input type="number" id="campoParcelas" min="1" max="12" value="2">
+        </div>
+      </div>
+
+      <div id="listaItens"></div>
+      <button class="btn btn-adicionar-item" id="btnAdicionarItem" type="button">+ Adicionar item comprado</button>
+
+      <div class="card" style="margin-top:14px">
+        <div class="valor-item" style="font-size:14px">Total da venda: <b id="totalVenda">R$ 0,00</b></div>
+      </div>
+
+      <button class="btn btn-primario" id="btnSalvarVenda" type="button">Registrar venda</button>
+    </section>
+
+    <!-- TELA: CONSULTAS -->
+    <section class="screen" id="tela-consultas">
+      <div class="subtabs">
+        <button class="ativo" data-sub="resumo">Resumo</button>
+        <button data-sub="devedores">Devedores</button>
+        <button data-sub="buscar">Buscar cliente</button>
+      </div>
+
+      <div id="sub-resumo">
+        <div class="kpis" id="kpisResumo"><div class="vazio">Carregando…</div></div>
+      </div>
+
+      <div id="sub-devedores" style="display:none">
+        <div class="card" id="listaDevedoresCard"><div class="vazio">Carregando…</div></div>
+      </div>
+
+      <div id="sub-buscar" style="display:none">
+        <div class="card">
+          <div class="busca-wrap">
+            <input type="text" id="campoBusca" list="listaClientesBusca" placeholder="Nome do cliente">
+            <datalist id="listaClientesBusca"></datalist>
+            <button class="btn btn-primario" id="btnBuscar" type="button">Buscar</button>
+          </div>
+        </div>
+        <div class="card" id="resultadoBusca" style="display:none"></div>
+      </div>
+    </section>
   </div>
 
+  <nav class="tabbar">
+    <button class="ativo" data-tela="tela-venda">
+      <span class="icone">➕</span><span class="rotulo">Nova venda</span>
+    </button>
+    <button data-tela="tela-consultas">
+      <span class="icone">📊</span><span class="rotulo">Consultas</span>
+    </button>
+  </nav>
+
+  <div class="loading-overlay" id="loading">Salvando…</div>
+
   <script>
-    // Redirecionamento direto (sem iframe), pra não travar a tela de permissão do Google.
-    window.location.replace("https://script.google.com/macros/s/AKfycbzFF-Sll4ttveguSIQfCDc1WDjy-4FwINTcuD3IKDpBfFFTWAWm0DL4SMo-glQm4IO_4Q/exec");
+    // Cole aqui o link da sua implantação do Apps Script (terminando em /exec)
+    const API_BASE = 'https://script.google.com/macros/s/AKfycby_-hajy2AUJj5JigArJc0tCKDwOF7o-bwvaOSNE4vqPUqoVvDDKnIIFt9-dFIko20NNw/exec';
+
+    let CATEGORIAS = [];
+    let FORMAS_PAGAMENTO = [];
+    let contadorItens = 0;
+
+    document.getElementById('dataHoje').textContent = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+    document.getElementById('campoData').valueAsDate = new Date();
+
+    // ---------- Navegação ----------
+    document.querySelectorAll('nav.tabbar button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('nav.tabbar button').forEach(b => b.classList.remove('ativo'));
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('ativo'));
+        btn.classList.add('ativo');
+        document.getElementById(btn.dataset.tela).classList.add('ativo');
+        if (btn.dataset.tela === 'tela-consultas') carregarResumo();
+      });
+    });
+
+    document.querySelectorAll('.subtabs button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.subtabs button').forEach(b => b.classList.remove('ativo'));
+        btn.classList.add('ativo');
+        ['resumo', 'devedores', 'buscar'].forEach(function (nome) {
+          document.getElementById('sub-' + nome).style.display = (nome === btn.dataset.sub) ? 'block' : 'none';
+        });
+        if (btn.dataset.sub === 'devedores') carregarDevedores();
+      });
+    });
+
+    // ---------- Dados iniciais ----------
+    fetch(API_BASE + '?action=dadosIniciais')
+      .then(r => r.json())
+      .then(function (resp) {
+      if (!resp.ok) throw new Error(resp.erro || 'Erro ao carregar dados iniciais.');
+      const dados = resp.dados;
+      CATEGORIAS = dados.categorias;
+      FORMAS_PAGAMENTO = dados.formasPagamento;
+
+      const selForma = document.getElementById('campoFormaPgto');
+      FORMAS_PAGAMENTO.forEach(f => selForma.appendChild(new Option(f, f)));
+      selForma.addEventListener('change', function () {
+        const precisaParcelas = (this.value === 'Fiado' || this.value === 'Cartão de Crédito');
+        document.getElementById('blocoParcelas').style.display = precisaParcelas ? 'block' : 'none';
+      });
+
+      const dl1 = document.getElementById('listaClientes');
+      const dl2 = document.getElementById('listaClientesBusca');
+      dados.clientes.forEach(function (nome) {
+        dl1.appendChild(new Option(nome, nome));
+        dl2.appendChild(new Option(nome, nome));
+      });
+
+      adicionarItem(); // começa com 1 item
+      })
+      .catch(function (erro) {
+        mostrarAviso('avisoVenda', '⚠ Não consegui conectar ao servidor: ' + erro.message, 'erro');
+      });
+
+    // ---------- Itens da venda ----------
+    function adicionarItem() {
+      contadorItens++;
+      const id = contadorItens;
+      const div = document.createElement('div');
+      div.className = 'item-card';
+      div.id = 'item-' + id;
+      div.innerHTML =
+        '<button type="button" class="remover" onclick="removerItem(' + id + ')">✕</button>' +
+        '<div class="num">ITEM ' + id + '</div>' +
+        '<label>Produto</label>' +
+        '<input type="text" class="i-produto" placeholder="Ex: Blusa branca">' +
+        '<div class="linha-dupla">' +
+          '<div><label>Categoria</label><select class="i-categoria"></select></div>' +
+          '<div><label>Qtd</label><input type="number" class="i-qtd" min="1" value="1"></div>' +
+        '</div>' +
+        '<div class="linha-dupla">' +
+          '<div><label>Custo unit. (R$)</label><input type="number" class="i-custo" step="0.01" min="0"></div>' +
+          '<div><label>Preço unit. (R$)</label><input type="number" class="i-preco" step="0.01" min="0"></div>' +
+        '</div>' +
+        '<div class="valor-item">Subtotal: <b class="i-subtotal">R$ 0,00</b></div>';
+      document.getElementById('listaItens').appendChild(div);
+
+      const selCat = div.querySelector('.i-categoria');
+      CATEGORIAS.forEach(c => selCat.appendChild(new Option(c, c)));
+
+      div.querySelectorAll('.i-qtd, .i-custo, .i-preco').forEach(function (campo) {
+        campo.addEventListener('input', recalcularTotais);
+      });
+    }
+    document.getElementById('btnAdicionarItem').addEventListener('click', adicionarItem);
+
+    function removerItem(id) {
+      const el = document.getElementById('item-' + id);
+      if (el && document.querySelectorAll('.item-card').length > 1) {
+        el.remove();
+        recalcularTotais();
+      } else {
+        mostrarAviso('avisoVenda', 'A venda precisa ter pelo menos 1 item.', 'erro');
+      }
+    }
+
+    function recalcularTotais() {
+      let total = 0;
+      document.querySelectorAll('.item-card').forEach(function (card) {
+        const qtd = Number(card.querySelector('.i-qtd').value) || 0;
+        const preco = Number(card.querySelector('.i-preco').value) || 0;
+        const subtotal = qtd * preco;
+        card.querySelector('.i-subtotal').textContent = formatarReais(subtotal);
+        total += subtotal;
+      });
+      document.getElementById('totalVenda').textContent = formatarReais(total);
+    }
+
+    function formatarReais(v) {
+      return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function mostrarAviso(idContainer, texto, tipo) {
+      document.getElementById(idContainer).innerHTML =
+        '<div class="aviso aviso-' + tipo + '">' + texto + '</div>';
+    }
+
+    // ---------- Salvar venda ----------
+    document.getElementById('btnSalvarVenda').addEventListener('click', function () {
+      const itensCards = document.querySelectorAll('.item-card');
+      const itens = [];
+      let temPrejuizo = false;
+
+      itensCards.forEach(function (card) {
+        const custo = Number(card.querySelector('.i-custo').value);
+        const preco = Number(card.querySelector('.i-preco').value);
+        if (custo > preco) temPrejuizo = true;
+        itens.push({
+          produto: card.querySelector('.i-produto').value,
+          categoria: card.querySelector('.i-categoria').value,
+          qtd: card.querySelector('.i-qtd').value,
+          custo: custo,
+          preco: preco,
+          confirmaPrejuizo: false
+        });
+      });
+
+      if (temPrejuizo) {
+        const confirma = confirm('O custo de algum item é MAIOR que o preço de venda — essa venda daria prejuízo. Confirma mesmo assim?');
+        if (!confirma) return;
+        itens.forEach(i => i.confirmaPrejuizo = true);
+      }
+
+      const venda = {
+        data: document.getElementById('campoData').value,
+        cliente: document.getElementById('campoCliente').value,
+        telefone: document.getElementById('campoTelefone').value,
+        formaPgto: document.getElementById('campoFormaPgto').value,
+        parcelas: document.getElementById('campoParcelas').value,
+        itens: itens
+      };
+
+      if (!venda.cliente) { mostrarAviso('avisoVenda', 'Informe o nome do cliente.', 'erro'); return; }
+
+      document.getElementById('loading').classList.add('ativo');
+      fetch(API_BASE + '?action=registrarVenda', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita pré-checagem de CORS
+        body: JSON.stringify(venda)
+      })
+        .then(r => r.json())
+        .then(function (resp) {
+          if (!resp.ok) throw new Error(resp.erro || 'Erro ao salvar.');
+          return resp.dados;
+        })
+        .then(function (resultado) {
+          document.getElementById('loading').classList.remove('ativo');
+          mostrarAviso('avisoVenda', '✓ Venda registrada com sucesso (' + resultado.itensGravados + ' item(ns)).', 'sucesso');
+          document.getElementById('listaItens').innerHTML = '';
+          contadorItens = 0;
+          adicionarItem();
+          document.getElementById('campoCliente').value = '';
+          document.getElementById('campoTelefone').value = '';
+          recalcularTotais();
+        })
+        .catch(function (erro) {
+          document.getElementById('loading').classList.remove('ativo');
+          mostrarAviso('avisoVenda', '⚠ ' + erro.message, 'erro');
+        });
+    });
+
+    // ---------- Consultas: Resumo ----------
+    function carregarResumo() {
+      fetch(API_BASE + '?action=obterResumoFinanceiro').then(r => r.json()).then(function (resp) {
+        const r = resp.dados;
+        if (!resp.ok || !r) { document.getElementById('kpisResumo').innerHTML = '<div class="vazio">Não consegui carregar o resumo.</div>'; return; }
+        document.getElementById('kpisResumo').innerHTML =
+          kpi('Faturamento do mês', r.faturamentoMes, true) +
+          kpi('Faturamento total', r.faturamentoTotal) +
+          kpi('Recebido', r.totalRecebido) +
+          kpi('Pendente (a receber)', r.totalPendente) +
+          kpi('Em fiado', r.valorEmFiado) +
+          kpi('Ticket médio', r.ticketMedio) +
+          kpiTexto('Produto mais vendido', r.produtoMaisVendido) +
+          kpiTexto('Cliente que mais comprou', r.clienteQueMaisComprou);
+      }).catch(function () {
+        document.getElementById('kpisResumo').innerHTML = '<div class="vazio">Não consegui conectar ao servidor.</div>';
+      });
+    }
+
+    function kpi(rotulo, valor, destaque) {
+      return '<div class="kpi' + (destaque ? ' destaque' : '') + '"><div class="rotulo">' + rotulo + '</div><div class="valor">' + formatarReais(Number(valor) || 0) + '</div></div>';
+    }
+    function kpiTexto(rotulo, valor) {
+      return '<div class="kpi"><div class="rotulo">' + rotulo + '</div><div class="valor" style="font-size:16px">' + (valor || '—') + '</div></div>';
+    }
+
+    // ---------- Consultas: Devedores ----------
+    function escaparHtml(texto) {
+      const div = document.createElement('div');
+      div.textContent = texto == null ? '' : texto;
+      return div.innerHTML;
+    }
+
+    function carregarDevedores() {
+      fetch(API_BASE + '?action=listarDevedores').then(r => r.json()).then(function (resp) {
+        const lista = resp.dados || [];
+        const container = document.getElementById('listaDevedoresCard');
+        if (!resp.ok) { container.innerHTML = '<div class="vazio">Não consegui carregar os devedores.</div>'; return; }
+        if (!lista.length) { container.innerHTML = '<div class="vazio">Nenhum cliente devendo 🎉</div>'; return; }
+        container.innerHTML = lista.map(function (d) {
+          return '<div class="devedor-linha" data-cliente="' + escaparHtml(d.cliente) + '">' +
+            '<div><div class="nome">' + escaparHtml(d.cliente) + '</div><div class="sub">' + d.parcelasPendentes + ' parcela(s) • vence ' + d.proximoVencimento + '</div></div>' +
+            '<div class="total">' + formatarReais(d.totalDevido) + '</div>' +
+          '</div>';
+        }).join('');
+        container.querySelectorAll('.devedor-linha').forEach(function (linha) {
+          linha.addEventListener('click', function () { abrirParcelasCliente(linha.dataset.cliente); });
+        });
+      }).catch(function () {
+        document.getElementById('listaDevedoresCard').innerHTML = '<div class="vazio">Não consegui conectar ao servidor.</div>';
+      });
+    }
+
+    function abrirParcelasCliente(nome) {
+      document.getElementById('campoBusca').value = nome;
+      document.querySelector('[data-sub="buscar"]').click();
+      buscarCliente();
+    }
+
+    // ---------- Consultas: Buscar cliente ----------
+    document.getElementById('btnBuscar').addEventListener('click', buscarCliente);
+    function buscarCliente() {
+      const nome = document.getElementById('campoBusca').value;
+      if (!nome) return;
+      const box = document.getElementById('resultadoBusca');
+      box.style.display = 'block';
+      box.innerHTML = '<div class="vazio">Buscando…</div>';
+      fetch(API_BASE + '?action=listarParcelasCliente&cliente=' + encodeURIComponent(nome))
+        .then(r => r.json())
+        .then(function (resp) {
+        const parcelas = resp.dados || [];
+        if (!resp.ok) throw new Error(resp.erro || 'Erro ao buscar.');
+        if (!parcelas.length) { box.innerHTML = '<div class="vazio">Nenhuma parcela encontrada para "' + escaparHtml(nome) + '".</div>'; return; }
+        const totalPendente = parcelas.filter(p => p.status === 'Pendente').reduce((s, p) => s + p.valor, 0);
+        box.innerHTML =
+          '<div style="margin-bottom:10px;font-weight:700">' + escaparHtml(nome) + ' — deve ' + formatarReais(totalPendente) + '</div>' +
+          parcelas.map(function (p) {
+            const pago = p.status === 'Pago';
+            return '<div class="parcela-linha">' +
+              '<div class="parcela-info"><div>' + escaparHtml(p.produto) + ' (' + escaparHtml(p.parcela) + ')</div><div class="venc">Vence ' + p.vencimento + ' • ' + formatarReais(p.valor) + '</div></div>' +
+              '<button class="status-chip ' + (pago ? 'status-pago' : 'status-pendente') + '" data-linha="' + p.linha + '" data-status="' + p.status + '">' + p.status + '</button>' +
+            '</div>';
+          }).join('');
+        box.querySelectorAll('.status-chip').forEach(function (botao) {
+          botao.addEventListener('click', function () {
+            alternarStatus(Number(botao.dataset.linha), botao.dataset.status, botao);
+          });
+        });
+      }).catch(function (erro) {
+        box.innerHTML = '<div class="vazio">Não consegui conectar ao servidor.</div>';
+      });
+    }
+
+    function alternarStatus(linha, statusAtual, botao) {
+      const novo = statusAtual === 'Pago' ? 'Pendente' : 'Pago';
+      botao.disabled = true;
+      fetch(API_BASE + '?action=marcarStatusParcela', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ linha: linha, status: novo })
+      })
+        .then(r => r.json())
+        .then(function (resp) {
+          if (!resp.ok) throw new Error(resp.erro || 'Erro ao atualizar.');
+          botao.textContent = novo;
+          botao.className = 'status-chip ' + (novo === 'Pago' ? 'status-pago' : 'status-pendente');
+          botao.dataset.status = novo;
+          botao.disabled = false;
+        })
+        .catch(function () {
+          botao.disabled = false;
+        });
+    }
   </script>
 </body>
 </html>
